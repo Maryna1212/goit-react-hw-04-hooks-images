@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Swal from 'sweetalert2';
 import {
@@ -9,49 +9,44 @@ import {
   SearchInput,
 } from './Searchbar.styled';
 
-export default class Searchbar extends Component {
-  state = {
-    imageName: '',
-  };
+export default function Searchbar({ onSubmit }) {
+  const [imageName, setImageName] = useState('');
 
-  handleNameChange = event => {
-    this.setState({ imageName: event.currentTarget.value.toLowerCase() });
-  };
+  const handleNameChange = event =>
+    setImageName(event.currentTarget.value.toLowerCase());
 
-  handleSubmit = event => {
+  const handleSubmit = event => {
     event.preventDefault();
 
-    if (this.state.imageName.trim() === '') {
+    if (imageName.trim() === '') {
       return Swal.fire(
-        `There are no image on your request ${this.state.imageName}. Please try again!`,
+        `There are no image on your request ${imageName}. Please try again!`,
       );
     }
 
-    this.props.onSubmit(this.state.imageName);
-    this.setState({ imageName: '' });
+    onSubmit(imageName);
+    setImageName('');
   };
 
-  render() {
-    return (
-      <SearchbarHeader>
-        <SearchForm onSubmit={this.handleSubmit}>
-          <SearchFormButton type="submit">
-            <SearchLabel>Search</SearchLabel>
-          </SearchFormButton>
+  return (
+    <SearchbarHeader>
+      <SearchForm onSubmit={handleSubmit}>
+        <SearchFormButton type="submit">
+          <SearchLabel>Search</SearchLabel>
+        </SearchFormButton>
 
-          <SearchInput
-            type="text"
-            name="imageName"
-            value={this.state.imageName}
-            autocomplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            onChange={this.handleNameChange}
-          />
-        </SearchForm>
-      </SearchbarHeader>
-    );
-  }
+        <SearchInput
+          type="text"
+          name="imageName"
+          value={imageName}
+          autocomplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          onChange={handleNameChange}
+        />
+      </SearchForm>
+    </SearchbarHeader>
+  );
 }
 
 Searchbar.propTypes = {
