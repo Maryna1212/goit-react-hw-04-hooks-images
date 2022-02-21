@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-// import { GlobalStyle } from './components/GlobalStyle';
+import React, { useState, useEffect } from 'react';
+import AppStyles from './components/App.styled';
 import Swal from 'sweetalert2';
 import Searchbar from './components/Searchbar/Searchbar';
 import ImageGallery from './components/ImageGallery/ImageGallery';
@@ -10,84 +10,76 @@ import ApiService from './components/apiService';
 
 const newApiService = new ApiService();
 
-class App extends Component {
-  state = {
-    imageName: '',
-    page: 1,
-    loading: false,
-    showModal: false,
-    images: null,
-    error: null,
-    imgModal: null,
-  };
+export default function App() {
+  const [imageName, setImageName] = useState('');
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [images, setImages] = useState(null);
+  const [error, setError] = useState(null);
+  const [imgModal, setImgModal] = useState(null);
 
-  componentDidUpdate(prevProps, prevState) {
-    const prevName = prevState.imageName;
-    const nextName = this.state.imageName;
-
-    if (prevName !== nextName) {
-      this.setState({ loading: true });
-
-      newApiService.query = nextName;
+  useEffect(() => {
+    const fetchImages = () => {
+      setLoading(true);
+      setImages(null);
+      newApiService.query = imageName;
       newApiService.resetPage();
-      this.fetchAdditionalImages();
-    }
-  }
+      newApiService
+        .fetchImages({ searchName: imageName, page })
+        .then(responseImages => {
+          setImages(prevImages => [...prevImages, ...responseImages]);
+          setPage(prevPage => prevPage + 1);
+        })
+        .catch(error => setError(error))
+        .finally(() => setLoading(false));
+    };
 
-  fetchAdditionalImages = () => {
-    const { images, imageName } = this.state;
+    fetchImages();
+  }, [imageName, page]);
 
-    this.setState({
-      loading: true,
-      scroll: true,
-    });
+  const fetchAdditionalImages = () => {
+    setLoading(true);
     return newApiService
       .fetchImages()
       .then(({ hits }) => {
         const prevStateImages = images ? images : [];
-        this.setState({ images: [...prevStateImages, ...hits] });
+        setImages([...prevStateImages, ...hits]);
         if (hits.length === 0) {
           Swal.fire(`Cannot find the image on your request ${imageName}`);
           return;
         }
       })
-      .catch(error => this.setState({ error }))
-      .finally(() => this.setState({ loading: false }));
+      .catch(error => setError(error))
+      .finally(() => setLoading(false));
   };
 
-  toggleModal = largeImageURL => {
-    this.setState(prevState => ({
-      showModal: !prevState.showModal,
-      imgModal: largeImageURL,
-    }));
+  const toggleModal = largeImageURL => {
+    setShowModal(prevState => !prevState);
+    setImgModal(largeImageURL);
   };
 
-  handleFormSubmit = imageName => {
-    this.setState({ imageName });
+  const handleFormSubmit = imageName => {
+    setImageName(imageName.toLowerCase());
+    setPage(1);
+    setShowModal(false);
+    setImgModal(null);
+    setError(error);
   };
 
-  render() {
-    const { images, showModal, loading, imgModal } = this.state;
-
-    return (
-      <>
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        {loading && <Loader />}
-        {images && (
-          <ImageGallery
-            onClick={this.toggleModal}
-            images={images}
-          ></ImageGallery>
-        )}
-        {images && <Button onClick={this.fetchAdditionalImages} />}
-        {showModal && (
-          <Modal onClose={this.toggleModal}>
-            <img src={imgModal} alt="" />
-          </Modal>
-        )}
-      </>
-    );
-  }
+  return (
+    <AppStyles>
+      <Searchbar onSubmit={handleFormSubmit} />
+      {loading && <Loader />}
+      {images && (
+        <ImageGallery onClick={toggleModal} images={images}></ImageGallery>
+      )}
+      {images && <Button onClick={fetchAdditionalImages} />}
+      {showModal && (
+        <Modal onClose={toggleModal}>
+          <img src={imgModal} alt="" />
+        </Modal>
+      )}
+    </AppStyles>
+  );
 }
-
-export default App;
