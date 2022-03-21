@@ -12,7 +12,7 @@ const newApiService = new ApiService();
 
 export default function App() {
   const [imageName, setImageName] = useState('');
-  const [page, setPage] = useState(1);
+  // const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [images, setImages] = useState(null);
@@ -20,31 +20,33 @@ export default function App() {
   const [imgModal, setImgModal] = useState(null);
 
   useEffect(() => {
-    const fetchImages = () => {
+    if (imageName) {
       setLoading(true);
       setImages(null);
       newApiService.query = imageName;
       newApiService.resetPage();
       newApiService
-        .fetchImages({ searchName: imageName, page })
-        .then(responseImages => {
-          setImages(prevImages => [...prevImages, ...responseImages]);
-          setPage(prevPage => prevPage + 1);
+        .fetchImages()
+        .then(({ hits }) => {
+          setImages(hits);
+
+          if (hits.length === 0) {
+            setImages(null);
+            Swal.fire(`Cannot find the image on your request ${imageName}`);
+            return;
+          }
         })
         .catch(error => setError(error))
         .finally(() => setLoading(false));
-    };
-
-    fetchImages();
-  }, [imageName, page]);
+    }
+  }, [imageName]);
 
   const fetchAdditionalImages = () => {
     setLoading(true);
     return newApiService
       .fetchImages()
       .then(({ hits }) => {
-        const prevStateImages = images ? images : [];
-        setImages([...prevStateImages, ...hits]);
+        setImages([...images, ...hits]);
         if (hits.length === 0) {
           Swal.fire(`Cannot find the image on your request ${imageName}`);
           return;
@@ -61,10 +63,8 @@ export default function App() {
 
   const handleFormSubmit = imageName => {
     setImageName(imageName.toLowerCase());
-    setPage(1);
     setShowModal(false);
     setImgModal(null);
-    setError(error);
   };
 
   return (

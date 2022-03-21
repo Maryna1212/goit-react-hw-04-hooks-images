@@ -21,12 +21,6 @@ export default function ImageGallery({ images, onClick }) {
 }
 
 ImageGallery.propTypes = {
-  images: PropTypes.arrayOf(
-    PropTypes.shape({
-      tags: PropTypes.string,
-      webformatURL: PropTypes.string,
-      largeImageURL: PropTypes.string,
-    }),
-  ),
+  images: PropTypes.array,
   onClick: PropTypes.func.isRequired,
 };
